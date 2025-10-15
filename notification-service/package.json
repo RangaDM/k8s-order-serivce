@@ -1,0 +1,14 @@
+{
+    "name": "notification-service",
+    "version": "1.0.0",
+    "description": "Consumes order events and creates notifications",
+    "main": "src/index.js",
+    "scripts": {
+      "start": "node src/index.js"
+    },
+    "dependencies": {
+      "kafkajs": "^2.2.4",
+      "pg": "^8.11.3"
+    }
+  }
+  

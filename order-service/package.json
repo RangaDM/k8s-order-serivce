@@ -1,0 +1,16 @@
+{
+    "name": "order-service",
+    "version": "1.0.0",
+    "description": "Manages orders and sends Kafka events",
+    "main": "src/index.js",
+    "scripts": {
+      "start": "node src/index.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "kafkajs": "^2.2.4",
+      "pg": "^8.11.3",
+      "cors": "^2.8.5"
+    }
+  }
+  
