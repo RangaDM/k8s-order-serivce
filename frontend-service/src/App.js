@@ -4,6 +4,8 @@ function App() {
   const [itemName, setItemName] = useState('');
   const [message, setMessage] = useState('');
 
+  const apiUrl = process.env.REACT_APP_ORDER_API_URL || 'http://order-service:3001'
+
   const createOrder = async () => {
     if (!itemName) {
       setMessage('Please enter an item name.');
@@ -12,7 +14,7 @@ function App() {
     try {
       // In a real GKE deployment, you'd use the internal service name,
       // e.g., 'http://order-service:3001/orders'
-      const response = await fetch('http://localhost:3001/orders', {
+      const response = await fetch(`${apiUrl}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemName }),

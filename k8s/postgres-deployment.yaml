@@ -1,0 +1,103 @@
+# --- order-db Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-db
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: order-db
+---
+# --- order-db StatefulSet for stable storage ---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: order-db
+spec:
+  serviceName: "order-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-db
+  template:
+    metadata:
+      labels:
+        app: order-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "order_db"
+        - name: POSTGRES_USER
+          value: "user"
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        volumeMounts:
+        - name: order-db-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: order-db-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+# --- SEPARATOR ---
+---
+# --- notification-db Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-db
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: notification-db
+---
+# --- notification-db StatefulSet for stable storage ---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: notification-db
+spec:
+  serviceName: "notification-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-db
+  template:
+    metadata:
+      labels:
+        app: notification-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "notification_db"
+        - name: POSTGRES_USER
+          value: "user"
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        volumeMounts:
+        - name: notification-db-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: notification-db-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

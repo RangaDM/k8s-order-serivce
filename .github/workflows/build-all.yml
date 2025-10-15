@@ -1,0 +1,177 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_REGISTRY: docker.io
+  IMAGE_PREFIX: rangadm
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend-service }}
+      order: ${{ steps.changes.outputs.order-service }}
+      notification: ${{ steps.changes.outputs.notification-service }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            frontend-service:
+              - 'frontend-service/**'
+            order-service:
+              'order-service/**'
+            notification-service:
+              'notification-service/**'
+
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend-service
+          tags: |
+            type=raw,value=${{ github.run_number }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image info
+        run: |
+          echo "Built and pushed frontend-service with tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+
+  build-order:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.order == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}/order-service
+          tags: |
+            type=raw,value=${{ github.run_number }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./order-service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image info
+        run: |
+          echo "Built and pushed order-service with tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+
+  build-notification:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}/notification-service
+          tags: |
+            type=raw,value=${{ github.run_number }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./notification-service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image info
+        run: |
+          echo "Built and pushed notification-service with tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+
+  summary:
+    needs: [detect-changes, build-frontend, build-order, build-notification]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Service | ${{ needs.detect-changes.outputs.frontend == 'true' && '✅ Built' || '⏭️ Skipped (no changes)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Order Service | ${{ needs.detect-changes.outputs.order == 'true' && '✅ Built' || '⏭️ Skipped (no changes)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Notification Service | ${{ needs.detect-changes.outputs.notification == 'true' && '✅ Built' || '⏭️ Skipped (no changes)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,47 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: microservices-gateway
+spec:
+  selector:
+    istio: ingressgateway # Use Istio's default ingress gateway controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*" # Apply to all incoming traffic
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: microservices-virtualservice
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - microservices-gateway # Link to the Gateway resource
+  http:
+  - match:
+    - uri:
+        # If the URL path starts with /api, it's for the backend
+        prefix: /api
+    route:
+    - destination:
+        host: order-service
+        port:
+          number: 3001
+    rewrite:
+      # Rewrite the path before sending to the backend.
+      # e.g., a request to /api/orders becomes /orders
+      uri: "/"
+  - match:
+    - uri:
+        # All other requests are for the frontend
+        prefix: /
+    route:
+    - destination:
+        host: frontend-service
+        port:
+          number: 80
