@@ -30,7 +30,7 @@ const initDb = async () => {
 // Kafka Consumer
 const kafka = new Kafka({
   clientId: 'notification-service',
-  brokers: ['kafka:9092']
+  brokers: ['kafka-service:9092']
 });
 const consumer = kafka.consumer({ groupId: 'notification-group' });
 
