@@ -81,6 +81,19 @@ services:
     networks:
       - microservices-net
 
+  # NEW: Kafdrop UI Service
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: gke-microservices-practice-kafdrop-1
+    networks:
+      - microservices-net
+    depends_on:
+      - kafka
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+
 networks:
   microservices-net:
     driver: bridge
